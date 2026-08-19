@@ -11,14 +11,21 @@
     <section class="stage-wrap">
       <canvas id="stage" aria-label="Live smart mirror camera"></canvas>
       <video id="camera" autoplay playsinline muted></video>
+      <video id="ai-output" autoplay playsinline muted></video>
       <div id="status" class="status">Starting camera…</div>
     </section>
 
     <section class="controls">
       <div class="brand">
         <strong>Sari Cool Mirror</strong>
-        <span>Upload an accessory and wear it live.</span>
+        <span>Local AR overlays + prompt-driven realtime AI.</span>
       </div>
+
+      <form id="ai-form" class="ai-form">
+        <input id="prompt" type="text" autocomplete="off" placeholder="e.g. Put me in a sharp black suit" />
+        <button id="apply-ai" type="submit">Apply AI</button>
+        <button id="stop-ai" type="button" class="secondary" disabled>Stop AI</button>
+      </form>
 
       <label class="field">
         <span>Accessory type</span>
