@@ -1,0 +1,26 @@
+* { box-sizing: border-box; }
+html, body { margin: 0; min-height: 100%; background: #0b0b0d; color: #f5f5f5; font-family: Inter, system-ui, sans-serif; }
+body { min-height: 100svh; }
+button, select, input { font: inherit; }
+.app { min-height: 100svh; display: grid; grid-template-rows: 1fr auto; }
+.stage-wrap { position: relative; min-height: 0; overflow: hidden; background: #000; }
+#stage { width: 100%; height: 100%; display: block; object-fit: contain; touch-action: none; }
+#camera { position: absolute; width: 1px; height: 1px; opacity: 0; pointer-events: none; }
+.status { position: absolute; top: max(12px, env(safe-area-inset-top)); left: 12px; padding: 8px 10px; border-radius: 10px; background: rgba(0,0,0,.55); font-size: 13px; backdrop-filter: blur(8px); }
+.controls { display: grid; grid-template-columns: minmax(180px,1fr) auto auto auto minmax(140px,220px); gap: 10px; align-items: end; padding: 12px max(12px, env(safe-area-inset-right)) max(12px, env(safe-area-inset-bottom)) max(12px, env(safe-area-inset-left)); background: #151519; border-top: 1px solid #26262d; }
+.brand { display: flex; flex-direction: column; gap: 3px; }
+.brand span, .field span { color: #aaaab3; font-size: 12px; }
+.field { display: flex; flex-direction: column; gap: 5px; }
+.field select, button, .upload-button { border: 0; border-radius: 12px; min-height: 44px; padding: 0 14px; }
+.field select { background: #28282f; color: white; }
+.upload-button, button { display: inline-flex; align-items: center; justify-content: center; cursor: pointer; font-weight: 650; white-space: nowrap; }
+.upload-button { background: #f3f3f5; color: #111; }
+.upload-button input { display: none; }
+button.secondary { background: #28282f; color: white; }
+button:disabled { opacity: .45; cursor: default; }
+.compact input[type="range"] { min-height: 44px; width: 100%; }
+@media (max-width: 760px) {
+  .controls { grid-template-columns: 1fr 1fr; }
+  .brand { grid-column: 1 / -1; }
+  .compact { grid-column: 1 / -1; }
+}
