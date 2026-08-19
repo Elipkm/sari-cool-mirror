@@ -1,0 +1,49 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <title>Sari Cool Mirror</title>
+  <link rel="stylesheet" href="./style.css" />
+</head>
+<body>
+  <main class="app">
+    <section class="stage-wrap">
+      <canvas id="stage" aria-label="Live smart mirror camera"></canvas>
+      <video id="camera" autoplay playsinline muted></video>
+      <div id="status" class="status">Starting camera…</div>
+    </section>
+
+    <section class="controls">
+      <div class="brand">
+        <strong>Sari Cool Mirror</strong>
+        <span>Upload an accessory and wear it live.</span>
+      </div>
+
+      <label class="field">
+        <span>Accessory type</span>
+        <select id="mode">
+          <option value="glasses">Glasses</option>
+          <option value="hat">Hat</option>
+          <option value="crown">Crown</option>
+          <option value="free">Free</option>
+        </select>
+      </label>
+
+      <label class="upload-button">
+        <input id="file" type="file" accept="image/png,image/webp,image/jpeg" />
+        Upload image
+      </label>
+
+      <button id="remove" type="button" class="secondary" disabled>Remove</button>
+
+      <label class="field compact">
+        <span>Size</span>
+        <input id="scale" type="range" min="50" max="180" value="100" />
+      </label>
+    </section>
+  </main>
+
+  <script type="module" src="./app.js"></script>
+</body>
+</html>
