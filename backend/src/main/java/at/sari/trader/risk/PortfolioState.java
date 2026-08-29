@@ -7,6 +7,7 @@ import java.util.Map;
 public record PortfolioState(
         BigDecimal equityEur,
         BigDecimal startOfDayEquityEur,
+        BigDecimal startOfWeekEquityEur,
         BigDecimal highWaterMarkEquityEur,
         BigDecimal cashEur,
         Map<String, BigDecimal> positionNotionalEur,
