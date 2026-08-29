@@ -15,4 +15,17 @@ create table if not exists paper_trade (
     decision_reasons varchar(2000) not null
 );
 
+create table if not exists paper_account (
+    id bigint primary key,
+    cash_eur numeric(24,8) not null,
+    start_of_day_equity_eur numeric(24,8) not null,
+    start_of_week_equity_eur numeric(24,8) not null,
+    high_water_mark_equity_eur numeric(24,8) not null
+);
+
+create table if not exists paper_position (
+    asset varchar(16) primary key,
+    quantity numeric(30,12) not null
+);
+
 create index if not exists idx_paper_trade_created_at on paper_trade (created_at desc);
