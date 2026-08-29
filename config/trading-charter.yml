@@ -1,4 +1,4 @@
-version: 1
+version: 2
 mode: PAPER
 
 capital:
@@ -14,17 +14,31 @@ philosophy:
     - prefer_liquid_assets
     - avoid_hype_without_confirmation
     - every_trade_requires_invalidation_condition
+    - strategy_does_not_choose_position_size
+    - risk_engine_uses_authoritative_account_state
 
 risk:
+  riskPerTradePct: 0.50
   maxPositionPct: 10
   maxTotalCryptoExposurePct: 80
   maxDailyLossPct: 2
   maxWeeklyLossPct: 5
+  cautionDrawdownPct: 7.5
+  reduceOnlyDrawdownPct: 10
   maxDrawdownPct: 15
-  minimumConfidence: 0.75
+  maxReferenceToStopPct: 12
   leverageAllowed: false
   stopLossRequired: true
   maxNewPositionsPerDay: 3
+
+riskSemantics:
+  equityIncludes: realized_and_unrealized_pnl
+  dailyBaseline: start_of_day_equity
+  weeklyBaseline: start_of_week_equity
+  drawdownBaseline: high_water_mark_equity
+  exposureIncludes: positions_and_open_orders
+  sizing: risk_budget_divided_by_stop_distance
+  lossLimitBehavior: block_new_risk_allow_risk_reduction
 
 assets:
   whitelist:
@@ -32,11 +46,26 @@ assets:
     - ETH
     - SOL
 
-emergency:
-  reduceRiskAtDrawdownPct: 10
-  haltTradingAtDrawdownPct: 15
+circuitBreaker:
+  states:
+    - NORMAL
+    - CAUTION
+    - REDUCE_ONLY
+    - HALTED
+  triggersInclude:
+    - drawdown
+    - stale_market_data
+    - exchange_reconciliation_mismatch
+    - execution_anomaly
+    - manual_kill_switch
 
 selfModification:
   agentMayChangeHardRiskRules: false
   agentMayRecommendRuleChanges: true
   humanApprovalRequired: true
+
+executionSecurity:
+  withdrawalPermission: false
+  transferPermission: false
+  paperTradingDefault: true
+  liveTradingRequiresExplicitProfile: true
