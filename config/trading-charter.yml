@@ -1,0 +1,42 @@
+version: 1
+mode: PAPER
+
+capital:
+  initialEur: 5000
+  additionalFunding: false
+
+philosophy:
+  objective: risk_adjusted_capital_growth
+  horizon: swing
+  principles:
+    - preserve_capital
+    - trade_only_when_edge_is_explicit
+    - prefer_liquid_assets
+    - avoid_hype_without_confirmation
+    - every_trade_requires_invalidation_condition
+
+risk:
+  maxPositionPct: 10
+  maxTotalCryptoExposurePct: 80
+  maxDailyLossPct: 2
+  maxWeeklyLossPct: 5
+  maxDrawdownPct: 15
+  minimumConfidence: 0.75
+  leverageAllowed: false
+  stopLossRequired: true
+  maxNewPositionsPerDay: 3
+
+assets:
+  whitelist:
+    - BTC
+    - ETH
+    - SOL
+
+emergency:
+  reduceRiskAtDrawdownPct: 10
+  haltTradingAtDrawdownPct: 15
+
+selfModification:
+  agentMayChangeHardRiskRules: false
+  agentMayRecommendRuleChanges: true
+  humanApprovalRequired: true

@@ -1,7 +1,18 @@
-.venv/
-__pycache__/
-*.py[cod]
 .idea/
 .vscode/
-.DS_Store
 .env
+*.log
+.DS_Store
+
+# Java
+backend/target/
+
+# Python
+__pycache__/
+*.py[cod]
+.venv/
+
+# Angular
+node_modules/
+dashboard/dist/
+.angular/

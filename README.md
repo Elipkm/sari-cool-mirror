@@ -1,83 +1,67 @@
-# Sari Cool Mirror
+# Autonomous Crypto Trading Agent
 
-A latency-first smart mirror / mobile AR prototype.
+A bounded-autonomy crypto trading system. The AI can research, form theses and propose trades, but deterministic risk rules decide whether an order is allowed.
 
-The current MVP is a local web app: it opens the front camera, tracks one face with MediaPipe Face Landmarker, lets you upload an accessory image, and attaches it to the live video as glasses, a hat, a crown, or a generic face overlay.
+> Status: MVP foundation. **Paper trading first. No real-money exchange execution is enabled.**
 
-## Web MVP
+## Core principle
 
-### What works now
+`Observe -> Analyze -> Propose -> Risk Check -> Execute -> Record -> Review`
 
-- live webcam / phone front-camera preview
-- upload PNG, WebP, or JPEG
-- automatic face tracking
-- presets for glasses, hat, crown, and free overlay
-- overlay follows face position, size, and head tilt
-- size slider
-- remove button
-- mobile-friendly layout
-- all processing happens in the browser; uploaded accessory images are not sent to this project's server
+The risk engine outranks every model and agent. LLM output is advisory and never bypasses hard limits.
 
-Transparent PNG/WebP images work best for accessories.
+## Repository layout
 
-### Start it
+- `backend/` Spring Boot control plane, risk engine and decision API
+- `quant/` Python/FastAPI quantitative market-analysis service
+- `dashboard/` Angular review dashboard
+- `config/trading-charter.yml` human-owned trading constitution
+- `docs/ARCHITECTURE.md` system design and roadmap
 
-Python 3 is enough for the web MVP. No Python packages are required.
+## MVP scope
 
-```bash
-git clone https://github.com/Elipkm/sari-cool-mirror.git
-cd sari-cool-mirror
-python serve.py
-```
+1. Paper account with fixed starting capital.
+2. Trade proposals represented as structured data.
+3. Deterministic checks for position size, confidence, daily loss, drawdown and asset whitelist.
+4. Quant service exposing basic market indicators.
+5. Dashboard for portfolio/risk state and agent decisions.
+6. Full decision ledger before any live trading integration.
 
-Then open:
+## Run locally
 
-```text
-http://localhost:8000
-```
-
-Allow camera access in the browser, select an accessory type, and press **Upload image**.
-
-> Note: camera access through `getUserMedia()` requires a secure context. Browsers treat `localhost` as a trusted local context, so this MVP works locally. For testing from another phone over your LAN, use HTTPS or a secure development tunnel rather than plain `http://<laptop-ip>:8000`.
-
-## Architecture
-
-```text
-Front camera
-    ↓
-Browser getUserMedia()
-    ↓
-MediaPipe Face Landmarker
-    ↓
-face landmarks
-    ↓
-accessory transform
-(position + scale + rotation)
-    ↓
-Canvas compositor
-    ↓
-live mirror view
-```
-
-The browser implementation is intentionally the primary MVP because it maps well to the final mobile-phone target and avoids an unnecessary Python/OpenCV video round trip.
-
-## Legacy OpenCV prototype
-
-The repository also still contains the initial Python/OpenCV latency prototype:
+Requirements: Docker + Docker Compose.
 
 ```bash
-python -m venv .venv
-pip install -r requirements.txt
-python -m src.main
+docker compose up --build
 ```
 
-It provides threaded latest-frame capture, mirrored display, FPS/frame-age instrumentation, and a VTON integration placeholder.
+Services:
+
+- Backend: http://localhost:8080
+- Quant service: http://localhost:8000
+- Dashboard: http://localhost:4200
+- PostgreSQL: localhost:5432
+
+Test the risk engine:
+
+```bash
+curl -X POST http://localhost:8080/api/decisions/evaluate \
+  -H "Content-Type: application/json" \
+  -d '{"asset":"BTC","side":"BUY","amountEur":250,"confidence":0.82,"currentAssetExposurePct":5,"dailyLossPct":0,"drawdownPct":0}'
+```
+
+## Safety model
+
+Live exchange credentials must eventually use trade-only permissions. Withdrawals, transfers and API-key administration must remain disabled. A dedicated exchange sub-account should contain only capital allocated to the system.
 
 ## Next milestones
 
-1. Improve accessory calibration and add manual X/Y adjustment.
-2. Add touch gestures for drag, pinch-to-scale, and rotation.
-3. Add multiple simultaneous accessories.
-4. Add face occlusion so, for example, glasses arms can appear behind the head where appropriate.
-5. Package the web app as a PWA or mobile wrapper.
-6. Add clothing/body tracking separately for full virtual try-on.
+- Persist decisions and portfolio snapshots in PostgreSQL.
+- Add exchange-neutral paper execution adapter.
+- Add historical backtesting and benchmark comparison.
+- Add market-regime classifier and strategy agents.
+- Add LLM research/portfolio-manager layer with structured outputs.
+- Add weekly AI investment-committee report.
+- Only after a proven paper-trading period: optional live exchange adapter with strict permission checks.
+
+This project is experimental software, not financial advice.

@@ -1,0 +1,20 @@
+spring:
+  application:
+    name: trading-control-plane
+  datasource:
+    url: ${SPRING_DATASOURCE_URL:jdbc:postgresql://localhost:5432/trader}
+    username: ${SPRING_DATASOURCE_USERNAME:trader}
+    password: ${SPRING_DATASOURCE_PASSWORD:trader}
+  jpa:
+    hibernate:
+      ddl-auto: validate
+    open-in-view: false
+
+trading:
+  risk:
+    portfolio-value-eur: 5000
+    max-position-pct: 10
+    max-daily-loss-pct: 2
+    max-drawdown-pct: 15
+    minimum-confidence: 0.75
+    asset-whitelist: BTC,ETH,SOL

@@ -1,0 +1,43 @@
+services:
+  postgres:
+    image: postgres:17-alpine
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB:-trader}
+      POSTGRES_USER: ${POSTGRES_USER:-trader}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-trader}
+    ports:
+      - "5432:5432"
+    volumes:
+      - trader-db:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-trader} -d ${POSTGRES_DB:-trader}"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+
+  backend:
+    build: ./backend
+    ports:
+      - "8080:8080"
+    environment:
+      SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/${POSTGRES_DB:-trader}
+      SPRING_DATASOURCE_USERNAME: ${POSTGRES_USER:-trader}
+      SPRING_DATASOURCE_PASSWORD: ${POSTGRES_PASSWORD:-trader}
+    depends_on:
+      postgres:
+        condition: service_healthy
+
+  quant:
+    build: ./quant
+    ports:
+      - "8000:8000"
+
+  dashboard:
+    build: ./dashboard
+    ports:
+      - "4200:80"
+    depends_on:
+      - backend
+
+volumes:
+  trader-db:
