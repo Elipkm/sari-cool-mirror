@@ -5,12 +5,18 @@ spring:
     url: ${SPRING_DATASOURCE_URL:jdbc:postgresql://localhost:5432/trader}
     username: ${SPRING_DATASOURCE_USERNAME:trader}
     password: ${SPRING_DATASOURCE_PASSWORD:trader}
+  sql:
+    init:
+      mode: always
   jpa:
     hibernate:
       ddl-auto: validate
     open-in-view: false
 
 trading:
+  paper:
+    fee-pct: 0.25
+    slippage-pct: 0.10
   risk:
     risk-per-trade-pct: 0.50
     max-position-pct: 10
