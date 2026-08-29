@@ -1,0 +1,18 @@
+spring:
+  datasource:
+    url: jdbc:h2:mem:trader;MODE=PostgreSQL;DB_CLOSE_DELAY=-1
+    driver-class-name: org.h2.Driver
+    username: sa
+    password:
+  sql:
+    init:
+      mode: always
+  jpa:
+    hibernate:
+      ddl-auto: validate
+    open-in-view: false
+
+trading:
+  paper:
+    fee-pct: 0.25
+    slippage-pct: 0.10
