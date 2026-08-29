@@ -18,6 +18,7 @@ public class InMemoryPaperPortfolioStateProvider implements PortfolioStateProvid
                 equity,
                 equity,
                 equity,
+                equity,
                 Map.of(),
                 Map.of(),
                 CircuitBreakerState.NORMAL
