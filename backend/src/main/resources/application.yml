@@ -12,9 +12,13 @@ spring:
 
 trading:
   risk:
-    portfolio-value-eur: 5000
+    risk-per-trade-pct: 0.50
     max-position-pct: 10
+    max-total-crypto-exposure-pct: 80
     max-daily-loss-pct: 2
+    max-weekly-loss-pct: 5
+    caution-drawdown-pct: 7.5
+    reduce-only-drawdown-pct: 10
     max-drawdown-pct: 15
-    minimum-confidence: 0.75
+    max-reference-to-stop-pct: 12
     asset-whitelist: BTC,ETH,SOL
