@@ -1,0 +1,140 @@
+@startuml
+!theme plain
+skinparam shadowing false
+skinparam packageStyle rectangle
+skinparam componentStyle rectangle
+skinparam defaultTextAlignment center
+
+actor User
+
+package "Angular Dashboard" {
+  [Portfolio Overview] as Dashboard
+  [Trade / Decision Ledger] as LedgerUI
+  [Risk & Limits] as RiskUI
+  [Weekly / Monthly Review] as ReviewUI
+}
+
+package "Spring Boot Control Plane" {
+  [REST API] as API
+  [Agent Orchestrator] as Orchestrator
+  [Market Research Adapter] as Research
+  [Decision Engine\nLLM Agent] as Decision
+  [Strategy Engine] as Strategy
+  [Deterministic Risk Engine] as Risk
+  [Execution Engine] as Execution
+  [Memory / Knowledge] as Memory
+  [Scheduler / Jobs] as Scheduler
+}
+
+package "Python Quant Service" {
+  [Market Data Ingestion] as Ingest
+  [Indicators / Features] as Indicators
+  [Backtesting Engine] as Backtest
+  [Regime / Signal Models] as Models
+}
+
+database "PostgreSQL" as DB
+collections "Object Storage\nReports / Backtests" as Storage
+
+cloud "Market Data Providers" as MarketData
+cloud "News / Sentiment" as News
+cloud "On-chain Data" as Onchain
+
+package "Exchange Adapter Layer" {
+  interface ExchangePort
+  [Paper Exchange Simulator] as Paper
+  [Kraken Adapter] as Kraken
+  [Future Coinbase Adapter] as Coinbase
+  [Future Bitstamp Adapter] as Bitstamp
+}
+
+package "Security Boundary" {
+  [Secrets Manager] as Secrets
+  [Kill Switch] as Kill
+  note right of Kill
+    Hard stop outside AI control
+  end note
+}
+
+User --> Dashboard
+User --> LedgerUI
+User --> RiskUI
+User --> ReviewUI
+
+Dashboard --> API
+LedgerUI --> API
+RiskUI --> API
+ReviewUI --> API
+
+API --> Orchestrator
+Scheduler --> Orchestrator
+Orchestrator --> Research
+Orchestrator --> Decision
+Orchestrator --> Strategy
+Orchestrator --> Memory
+Research --> Decision
+Strategy --> Decision
+Decision --> Risk : proposal
+Risk --> Execution : approved order only
+Risk --> Kill : halt on breach
+Execution --> ExchangePort
+
+ExchangePort <|.. Paper
+ExchangePort <|.. Kraken
+ExchangePort <|.. Coinbase
+ExchangePort <|.. Bitstamp
+
+Kraken --> Secrets : scoped API key\nNO withdrawal permission
+Coinbase --> Secrets
+Bitstamp --> Secrets
+
+MarketData --> Research
+News --> Research
+Onchain --> Research
+MarketData --> Ingest
+Ingest --> Indicators
+Indicators --> Backtest
+Indicators --> Models
+Models --> Strategy
+Backtest --> Strategy
+
+API --> DB
+Orchestrator --> DB
+Risk --> DB
+Execution --> DB
+Memory --> DB
+Backtest --> Storage
+DB --> ReviewUI
+
+note bottom of Risk
+NON-BYPASSABLE RULES
+- max position
+- max daily / weekly loss
+- max drawdown
+- asset whitelist
+- no leverage initially
+- mandatory stop policy
+- capital ceiling
+end note
+
+note bottom of Paper
+DEFAULT MODE
+Realistic fees + slippage
+No live capital
+end note
+
+note bottom of Kraken
+FIRST LIVE TARGET
+REST / WebSocket
+Trade-scoped API key
+No withdrawal permission
+Capital isolated
+end note
+
+note bottom of Orchestrator
+Agent loop:
+Observe -> Analyze -> Form thesis -> Risk check
+-> Execute -> Measure -> Reflect -> Adapt
+end note
+
+@enduml
