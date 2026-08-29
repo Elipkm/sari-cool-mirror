@@ -1,5 +1,6 @@
 package at.sari.trader.paper;
 
+import at.sari.trader.market.MarketPriceProvider;
 import at.sari.trader.risk.RiskDecision;
 import at.sari.trader.risk.RiskEngine;
 import at.sari.trader.risk.TradeProposal;
@@ -15,51 +16,91 @@ import java.util.List;
 @Service
 public class PaperTradingService {
     private static final BigDecimal ONE_HUNDRED = new BigDecimal("100");
+    private static final BigDecimal INITIAL_CAPITAL = new BigDecimal("5000.00");
 
     private final RiskEngine riskEngine;
-    private final PaperTradeRepository repository;
+    private final PaperTradeRepository tradeRepository;
+    private final PaperAccountRepository accountRepository;
+    private final PaperPositionRepository positionRepository;
+    private final MarketPriceProvider marketPriceProvider;
     private final BigDecimal feePct;
     private final BigDecimal slippagePct;
 
     public PaperTradingService(
             RiskEngine riskEngine,
-            PaperTradeRepository repository,
+            PaperTradeRepository tradeRepository,
+            PaperAccountRepository accountRepository,
+            PaperPositionRepository positionRepository,
+            MarketPriceProvider marketPriceProvider,
             @Value("${trading.paper.fee-pct:0.25}") BigDecimal feePct,
             @Value("${trading.paper.slippage-pct:0.10}") BigDecimal slippagePct
     ) {
         this.riskEngine = riskEngine;
-        this.repository = repository;
+        this.tradeRepository = tradeRepository;
+        this.accountRepository = accountRepository;
+        this.positionRepository = positionRepository;
+        this.marketPriceProvider = marketPriceProvider;
         this.feePct = feePct;
         this.slippagePct = slippagePct;
     }
 
     @Transactional
-    public PaperTradeResult execute(TradeProposal proposal) {
-        RiskDecision decision = riskEngine.evaluate(proposal);
+    public PaperTradeResult execute(TradeProposal requestedProposal) {
+        BigDecimal marketPrice = marketPriceProvider.priceEur(requestedProposal.asset());
+        TradeProposal proposal = new TradeProposal(
+                requestedProposal.asset(),
+                requestedProposal.side(),
+                requestedProposal.strategy(),
+                marketPrice,
+                requestedProposal.invalidationPrice(),
+                requestedProposal.signalStrength(),
+                requestedProposal.thesis()
+        );
 
+        RiskDecision decision = riskEngine.evaluate(proposal);
         PaperTrade trade;
+
         if (!decision.allowed()) {
             trade = PaperTrade.rejected(proposal, decision.reasons());
+        } else if (proposal.side() != TradeProposal.Side.BUY) {
+            trade = PaperTrade.rejected(proposal, List.of("Milestone v0.2.0 supports opening BUY positions only"));
         } else {
             BigDecimal fillPrice = applySlippage(proposal);
             BigDecimal fee = decision.approvedNotionalEur()
                     .multiply(feePct)
                     .divide(ONE_HUNDRED, 2, RoundingMode.HALF_UP);
-            trade = PaperTrade.executed(
-                    proposal,
-                    decision.approvedNotionalEur(),
-                    fillPrice,
-                    fee,
-                    decision.reasons()
-            );
+            BigDecimal totalCost = decision.approvedNotionalEur().add(fee);
+
+            PaperAccount account = accountRepository.findById(1L)
+                    .orElseGet(() -> accountRepository.save(PaperAccount.initial(INITIAL_CAPITAL)));
+            if (totalCost.compareTo(account.getCashEur()) > 0) {
+                trade = PaperTrade.rejected(proposal, List.of("insufficient cash after fees"));
+            } else {
+                BigDecimal quantity = decision.approvedNotionalEur()
+                        .divide(fillPrice, 12, RoundingMode.DOWN);
+                PaperPosition position = positionRepository.findById(proposal.asset().toUpperCase())
+                        .orElseGet(() -> PaperPosition.of(proposal.asset()));
+                position.add(quantity);
+                account.debit(totalCost);
+                positionRepository.save(position);
+                accountRepository.save(account);
+
+                trade = PaperTrade.executed(
+                        proposal,
+                        decision.approvedNotionalEur(),
+                        fillPrice,
+                        fee,
+                        decision.reasons()
+                );
+            }
         }
 
-        return PaperTradeResult.from(repository.save(trade));
+        return PaperTradeResult.from(tradeRepository.save(trade));
     }
 
     @Transactional(readOnly = true)
     public List<PaperTradeResult> ledger() {
-        return repository.findAll(Sort.by(Sort.Direction.DESC, "createdAt"))
+        return tradeRepository.findAll(Sort.by(Sort.Direction.DESC, "createdAt"))
                 .stream()
                 .map(PaperTradeResult::from)
                 .toList();
@@ -67,8 +108,8 @@ public class PaperTradingService {
 
     private BigDecimal applySlippage(TradeProposal proposal) {
         BigDecimal factor = slippagePct.divide(ONE_HUNDRED, 10, RoundingMode.HALF_UP);
-        return proposal.side() == TradeProposal.Side.BUY
-                ? proposal.referencePrice().multiply(BigDecimal.ONE.add(factor)).setScale(8, RoundingMode.HALF_UP)
-                : proposal.referencePrice().multiply(BigDecimal.ONE.subtract(factor)).setScale(8, RoundingMode.HALF_UP);
+        return proposal.referencePrice()
+                .multiply(BigDecimal.ONE.add(factor))
+                .setScale(8, RoundingMode.HALF_UP);
     }
 }
