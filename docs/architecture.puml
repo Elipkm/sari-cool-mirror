@@ -7,134 +7,103 @@ skinparam defaultTextAlignment center
 
 actor User
 
-package "Angular Dashboard" {
-  [Portfolio Overview] as Dashboard
-  [Trade / Decision Ledger] as LedgerUI
-  [Risk & Limits] as RiskUI
-  [Weekly / Monthly Review] as ReviewUI
+package "Simple Dashboard" {
+  [Overview] as Overview
+  [Trades] as TradesUI
+  [Weekly Review] as Review
 }
 
-package "Spring Boot Control Plane" {
-  [REST API] as API
-  [Agent Orchestrator] as Orchestrator
-  [Market Research Adapter] as Research
-  [Decision Engine\nLLM Agent] as Decision
-  [Strategy Engine] as Strategy
-  [Deterministic Risk Engine] as Risk
+package "Spring Boot Trading Core" {
+  [Scheduler] as Scheduler
+  [Strategy] as Strategy
+  [Optional AI Research] as AI
+  [Risk Engine] as Risk
   [Execution Engine] as Execution
-  [Memory / Knowledge] as Memory
-  [Scheduler / Jobs] as Scheduler
+  [Portfolio State] as Portfolio
 }
 
-package "Python Quant Service" {
-  [Market Data Ingestion] as Ingest
-  [Indicators / Features] as Indicators
-  [Backtesting Engine] as Backtest
-  [Regime / Signal Models] as Models
-}
+database "PostgreSQL\nPortfolio + Orders + Trades" as DB
+cloud "Market Data" as Market
 
-database "PostgreSQL" as DB
-collections "Object Storage\nReports / Backtests" as Storage
-
-cloud "Market Data Providers" as MarketData
-cloud "News / Sentiment" as News
-cloud "On-chain Data" as Onchain
-
-package "Exchange Adapter Layer" {
+package "Exchange" {
   interface ExchangePort
-  [Paper Exchange Simulator] as Paper
-  [Kraken Adapter] as Kraken
-  [Future Coinbase Adapter] as Coinbase
-  [Future Bitstamp Adapter] as Bitstamp
+  [Paper Exchange] as Paper
+  [Kraken] as Kraken
 }
 
-package "Security Boundary" {
-  [Secrets Manager] as Secrets
-  [Kill Switch] as Kill
-  note right of Kill
-    Hard stop outside AI control
-  end note
-}
+User --> Overview
+User --> TradesUI
+User --> Review
+Overview --> Portfolio
+TradesUI --> DB
+Review --> DB
 
-User --> Dashboard
-User --> LedgerUI
-User --> RiskUI
-User --> ReviewUI
-
-Dashboard --> API
-LedgerUI --> API
-RiskUI --> API
-ReviewUI --> API
-
-API --> Orchestrator
-Scheduler --> Orchestrator
-Orchestrator --> Research
-Orchestrator --> Decision
-Orchestrator --> Strategy
-Orchestrator --> Memory
-Research --> Decision
-Strategy --> Decision
-Decision --> Risk : proposal
-Risk --> Execution : approved order only
-Risk --> Kill : halt on breach
+Scheduler --> Strategy
+Market --> Strategy
+Market --> Portfolio
+Strategy --> AI : optional context
+AI --> Risk : trade idea
+Strategy --> Risk : trade idea
+Portfolio --> Risk : trusted state
+Risk --> Execution : approved + sized order
 Execution --> ExchangePort
-
 ExchangePort <|.. Paper
 ExchangePort <|.. Kraken
-ExchangePort <|.. Coinbase
-ExchangePort <|.. Bitstamp
-
-Kraken --> Secrets : scoped API key\nNO withdrawal permission
-Coinbase --> Secrets
-Bitstamp --> Secrets
-
-MarketData --> Research
-News --> Research
-Onchain --> Research
-MarketData --> Ingest
-Ingest --> Indicators
-Indicators --> Backtest
-Indicators --> Models
-Models --> Strategy
-Backtest --> Strategy
-
-API --> DB
-Orchestrator --> DB
-Risk --> DB
 Execution --> DB
-Memory --> DB
-Backtest --> Storage
-DB --> ReviewUI
+Portfolio --> DB
+Kraken --> Portfolio : balances / orders
 
-note bottom of Risk
-NON-BYPASSABLE RULES
-- max position
-- max daily / weekly loss
+note right of Strategy
+START SIMPLE
+One swing strategy first
+BTC / ETH / SOL
+AI is optional, not required
+end note
+
+note right of Risk
+SIMPLE HARD RULES
+- no leverage
+- fixed risk per trade
+- max position size
+- daily / weekly loss limit
 - max drawdown
-- asset whitelist
-- no leverage initially
-- mandatory stop policy
-- capital ceiling
+- mandatory invalidation / stop
+- no new risk when halted
 end note
 
-note bottom of Paper
-DEFAULT MODE
+note right of Paper
+DEFAULT UNTIL PROVEN
 Realistic fees + slippage
-No live capital
+Same rules as live mode
 end note
 
-note bottom of Kraken
+note right of Kraken
 FIRST LIVE TARGET
-REST / WebSocket
-Trade-scoped API key
-No withdrawal permission
-Capital isolated
+Trade-only API key
+No withdrawals / transfers
+Only allocated capital
 end note
 
-note bottom of Orchestrator
-Agent loop:
-Observe -> Analyze -> Form thesis -> Risk check
--> Execute -> Measure -> Reflect -> Adapt
+note bottom of DB
+ONE SOURCE OF TRUTH
+Balances, positions, open orders,
+fills, P&L and decision history
+end note
+
+note bottom of Review
+WHAT YOU NEED TO KNOW
+Did it make money?
+Did it beat BTC / ETH hold?
+What was max drawdown?
+Did any rule break?
+Should it keep running?
+end note
+
+note bottom
+OVERALL PRINCIPLE
+Keep it understandable, easy to operate and measurable.
+Do not add components, agents or models unless they prove useful.
+Market Data -> Strategy -> Risk -> Exchange -> Ledger
 end note
 
 @enduml
