@@ -1,5 +1,7 @@
 package at.sari.trader;
 
+import at.sari.trader.market.DailyCandle;
+import at.sari.trader.market.MarketHistoryProvider;
 import at.sari.trader.market.MarketPriceProvider;
 import at.sari.trader.paper.PaperAccountRepository;
 import at.sari.trader.paper.PaperPositionRepository;
@@ -20,6 +22,8 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.test.context.ActiveProfiles;
 
 import java.math.BigDecimal;
+import java.time.Instant;
+import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
@@ -42,14 +46,9 @@ class PaperTradingEndToEndTest {
     @Test
     void tradeUsesMarketPriceAndPersistsRestartSafePortfolioState() {
         TradeProposal proposal = new TradeProposal(
-                "BTC",
-                TradeProposal.Side.BUY,
-                "trend_pullback",
-                new BigDecimal("999.00"), // deliberately wrong: backend must ignore it
-                new BigDecimal("95.00"),
-                0.80,
-                "Simple trend pullback"
-        );
+                "BTC", TradeProposal.Side.BUY, "trend_pullback",
+                new BigDecimal("999.00"), new BigDecimal("95.00"), 0.80,
+                "Simple trend pullback");
 
         ResponseEntity<PaperTradeResult> execution = http.postForEntity(
                 "/api/paper-trades", proposal, PaperTradeResult.class);
@@ -86,6 +85,13 @@ class PaperTradingEndToEndTest {
                 case "SOL" -> new BigDecimal("20.00");
                 default -> throw new IllegalArgumentException("unsupported test asset");
             };
+        }
+
+        @Bean
+        @Primary
+        MarketHistoryProvider marketHistoryProvider() {
+            return (asset, limit) -> List.of(
+                    new DailyCandle(Instant.parse("2026-01-01T00:00:00Z"), new BigDecimal("100.00")));
         }
     }
 }
