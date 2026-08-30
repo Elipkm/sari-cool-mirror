@@ -9,6 +9,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.context.TestConfiguration;
 import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Import;
 import org.springframework.context.annotation.Primary;
 
 import java.math.BigDecimal;
@@ -20,6 +21,7 @@ import static org.assertj.core.api.Assertions.assertThat;
         "spring.datasource.url=jdbc:h2:mem:weekly-review;MODE=PostgreSQL;DB_CLOSE_DELAY=-1",
         "spring.flyway.enabled=true"
 })
+@Import(WeeklyReviewEndToEndTest.MarketStubs.class)
 class WeeklyReviewEndToEndTest {
     @Autowired WeeklyReviewService weeklyReviewService;
 
@@ -38,6 +40,6 @@ class WeeklyReviewEndToEndTest {
     @TestConfiguration
     static class MarketStubs {
         @Bean @Primary MarketPriceProvider priceProvider() { return asset -> new BigDecimal("100.00"); }
-        @Bean @Primary MarketHistoryProvider historyProvider() { return asset -> List.of(); }
+        @Bean @Primary MarketHistoryProvider historyProvider() { return (asset, limit) -> List.of(); }
     }
 }
