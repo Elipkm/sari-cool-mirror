@@ -27,6 +27,7 @@ public class PaperAccount {
     }
 
     public void debit(BigDecimal amount) { cashEur = cashEur.subtract(amount); }
+    public void credit(BigDecimal amount) { cashEur = cashEur.add(amount); }
     public BigDecimal getCashEur() { return cashEur; }
     public BigDecimal getStartOfDayEquityEur() { return startOfDayEquityEur; }
     public BigDecimal getStartOfWeekEquityEur() { return startOfWeekEquityEur; }
