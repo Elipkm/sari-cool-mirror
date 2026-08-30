@@ -21,6 +21,8 @@ public class PaperPosition {
     }
 
     public void add(BigDecimal quantity) { this.quantity = this.quantity.add(quantity); }
+    public void clear() { this.quantity = BigDecimal.ZERO; }
+    public boolean isOpen() { return quantity != null && quantity.signum() > 0; }
     public String getAsset() { return asset; }
     public BigDecimal getQuantity() { return quantity; }
 }
