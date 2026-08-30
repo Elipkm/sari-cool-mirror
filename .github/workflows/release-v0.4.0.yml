@@ -1,0 +1,39 @@
+name: release-v0.4.0
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'docs/releases/v0.4.0.md'
+      - '.github/workflows/release-v0.4.0.yml'
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '21'
+          cache: maven
+      - name: Prove milestone end to end
+        working-directory: backend
+        run: mvn -B test
+      - name: Build dashboard
+        working-directory: dashboard
+        run: |
+          npm install
+          npm run build
+      - name: Tag v0.4.0
+        run: |
+          if git rev-parse v0.4.0 >/dev/null 2>&1; then exit 0; fi
+          git config user.name github-actions[bot]
+          git config user.email 41898282+github-actions[bot]@users.noreply.github.com
+          git tag -a v0.4.0 -m 'v0.4.0 Weekly Review'
+          git push origin v0.4.0
