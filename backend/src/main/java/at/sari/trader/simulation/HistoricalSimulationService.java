@@ -56,14 +56,23 @@ public class HistoricalSimulationService {
     public synchronized SimulationResult step(LocalDate requestedStartDate) {
         if (requestedStartDate == null) throw badRequest("startDate is required");
         if (session == null || !session.requestedStartDate.equals(requestedStartDate)) {
-            session = createSession(requestedStartDate);
+            session = createSession(requestedStartDate, LocalDate.now(ZoneOffset.UTC).minusDays(1));
         }
         return advanceOneDay();
     }
 
     public synchronized SimulationResult runToLatest(LocalDate requestedStartDate) {
         if (requestedStartDate == null) throw badRequest("startDate is required");
-        session = createSession(requestedStartDate);
+        session = createSession(requestedStartDate, LocalDate.now(ZoneOffset.UTC).minusDays(1));
+        SimulationResult result = null;
+        while (session.nextDay < session.days.size()) result = advanceOneDay();
+        return result;
+    }
+
+    public synchronized SimulationResult runRange(LocalDate startDate, LocalDate endDate) {
+        if (startDate == null || endDate == null) throw badRequest("startDate and endDate are required");
+        if (endDate.isBefore(startDate)) throw badRequest("endDate must not be before startDate");
+        session = createSession(startDate, endDate);
         SimulationResult result = null;
         while (session.nextDay < session.days.size()) result = advanceOneDay();
         return result;
@@ -145,9 +154,10 @@ public class HistoricalSimulationService {
         return new SimulationDecision(asset, decision.action().name(), "NONE", close, BigDecimal.ZERO, decision.reason());
     }
 
-    private Session createSession(LocalDate requestedStartDate) {
+    private Session createSession(LocalDate requestedStartDate, LocalDate endDate) {
         LocalDate todayUtc = LocalDate.now(ZoneOffset.UTC);
         if (!requestedStartDate.isBefore(todayUtc)) throw badRequest("startDate must be before today");
+        if (!endDate.isBefore(todayUtc)) throw badRequest("endDate must be before today");
 
         Map<String, List<DailyCandle>> history = new LinkedHashMap<>();
         for (String asset : ASSETS) {
@@ -162,6 +172,7 @@ public class HistoricalSimulationService {
         for (String asset : ASSETS.subList(1, ASSETS.size())) common.retainAll(dates(history.get(asset)));
         List<LocalDate> eligibleDays = common.stream()
                 .filter(date -> !date.isBefore(requestedStartDate))
+                .filter(date -> !date.isAfter(endDate))
                 .filter(date -> ASSETS.stream().allMatch(asset -> indexOf(history.get(asset), date) >= 50))
                 .sorted().toList();
         if (eligibleDays.isEmpty()) throw badRequest("startDate is outside available completed history");

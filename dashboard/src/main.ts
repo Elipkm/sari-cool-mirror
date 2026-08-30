@@ -78,6 +78,37 @@ interface SimulationResult {
   hasNextDay: boolean;
 }
 
+interface ValidationPeriod {
+  label: string;
+  startDate: string;
+  endDate: string;
+  regime: string;
+  days: number;
+  strategyReturnPct: number;
+  benchmarkReturnPct: number;
+  excessReturnPct: number;
+  maxDrawdownPct: number;
+  completedTrades: number;
+  winRatePct: number;
+  totalFeesEur: number;
+}
+
+interface ValidationCriterion {
+  name: string;
+  passed: boolean;
+  actual: string;
+  requirement: string;
+}
+
+interface StrategyValidationReport {
+  evaluatedAt: string;
+  frozenStrategy: string;
+  periods: ValidationPeriod[];
+  criteria: ValidationCriterion[];
+  verdict: 'ACCEPT' | 'REVISE' | 'REJECT';
+  summary: string;
+}
+
 @Component({
   selector: 'app-root',
   standalone: true,
@@ -96,6 +127,46 @@ interface SimulationResult {
         <article><span>This week</span><strong>{{ signed(review?.weeklyReturnPct) }}%</strong><small>vs weekly equity baseline</small></article>
         <article><span>Max drawdown</span><strong>{{ review?.maxDrawdownPct ?? 0 | number:'1.2-2' }}%</strong><small>Hard stop: 15%</small></article>
         <article><span>Cash</span><strong>{{ review?.cashEur | currency:'EUR' }}</strong><small>{{ positionCount }} open position(s)</small></article>
+      </section>
+
+      <section class="validation">
+        <article>
+          <div class="sim-header">
+            <div>
+              <p class="eyebrow">V0.7 STRATEGY DECISION · FROZEN PROTOCOL</p>
+              <h2>Does the strategy earn the right to continue?</h2>
+            </div>
+            <button class="evaluate" (click)="evaluateStrategy()" [disabled]="validationBusy">
+              {{ validationBusy ? 'Evaluating 540 days…' : 'Evaluate fixed periods' }}
+            </button>
+          </div>
+          <div *ngIf="validationError" class="error">{{ validationError }}</div>
+          <p *ngIf="!validation" class="empty">Runs three consecutive 180-day periods with the v0.6 strategy and risk parameters frozen in advance.</p>
+          <ng-container *ngIf="validation">
+            <div class="verdict" [class.accept]="validation.verdict === 'ACCEPT'" [class.reject]="validation.verdict === 'REJECT'">
+              <div><span>Decision</span><strong>{{ validation.verdict }}</strong></div>
+              <p>{{ validation.summary }}</p>
+            </div>
+            <div class="periods">
+              <div class="period" *ngFor="let period of validation.periods">
+                <div class="period-head"><b>{{ period.label }}</b><span>{{ period.regime }}</span></div>
+                <small>{{ period.startDate }} → {{ period.endDate }} · {{ period.days }} days</small>
+                <div class="period-return"><strong>{{ signed(period.strategyReturnPct) }}%</strong><span>strategy</span></div>
+                <div class="rule"><b>Buy & hold</b><span>{{ signed(period.benchmarkReturnPct) }}%</span></div>
+                <div class="rule"><b>Excess return</b><span>{{ signed(period.excessReturnPct) }}%</span></div>
+                <div class="rule"><b>Max drawdown</b><span>{{ period.maxDrawdownPct | number:'1.2-2' }}%</span></div>
+                <div class="rule"><b>Closed trades</b><span>{{ period.completedTrades }}</span></div>
+              </div>
+            </div>
+            <p class="eyebrow section-gap">FROZEN ACCEPTANCE CRITERIA</p>
+            <div class="criterion" *ngFor="let criterion of validation.criteria" [class.pass]="criterion.passed">
+              <b>{{ criterion.passed ? 'PASS' : 'FAIL' }}</b>
+              <span>{{ criterion.name }}</span>
+              <small>{{ criterion.actual }} · requires {{ criterion.requirement }}</small>
+            </div>
+            <small class="evaluated">{{ validation.frozenStrategy }} · evaluated {{ validation.evaluatedAt | date:'medium' }}</small>
+          </ng-container>
+        </article>
       </section>
 
       <section class="simulator">
@@ -190,10 +261,13 @@ class AppComponent implements OnInit {
   review?: WeeklyReview;
   automation?: AutomationRun;
   simulation?: SimulationResult;
+  validation?: StrategyValidationReport;
   simulationStartDate = this.defaultStartDate();
   simulationBusy = false;
   simulationMode: 'step' | 'all' | '' = '';
   simulationError = '';
+  validationBusy = false;
+  validationError = '';
   error = false;
 
   constructor(private http: HttpClient) {}
@@ -215,6 +289,21 @@ class AppComponent implements OnInit {
   get strategyLine() { return this.chartLine('equityEur'); }
   get benchmarkLine() { return this.chartLine('benchmarkEquityEur'); }
   signed(value?: number) { const n = value ?? 0; return `${n > 0 ? '+' : ''}${n.toFixed(2)}`; }
+
+  evaluateStrategy() {
+    this.validationBusy = true;
+    this.validationError = '';
+    this.http.post<StrategyValidationReport>('/api/validation/evaluate', null).subscribe({
+      next: report => {
+        this.validation = report;
+        this.validationBusy = false;
+      },
+      error: response => {
+        this.validationError = response?.error?.detail || response?.error?.message || 'Strategy evaluation could not run.';
+        this.validationBusy = false;
+      }
+    });
+  }
 
   testRun() {
     this.runSimulation('step');

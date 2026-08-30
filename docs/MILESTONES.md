@@ -98,7 +98,8 @@ Done when:
 - parameters are frozen before evaluation
 - results are separated into development and out-of-sample periods
 - explicit return, drawdown and trade-count criteria are documented
-- strategy is accepted, revised once from specific evidence, or rejected
+- an explicit ACCEPT, REVISE or REJECT verdict is recorded
+- no parameter tuning reuses the same out-of-sample result as fresh evidence
 
 ## v0.8.0 — Reliable Autonomous Operation
 

@@ -24,6 +24,18 @@ The simulation starts with €5,000, processes BTC, ETH and SOL, and includes th
 
 Historical simulation is held in memory and is completely separate from the persistent paper account. Changing the start date or restarting the backend resets it.
 
+## Run the frozen strategy decision
+
+Use **Evaluate fixed periods** on the dashboard. It runs three consecutive, non-overlapping 180-day periods and displays:
+
+- development, validation and out-of-sample results
+- BULL, BEAR or SIDEWAYS market classification
+- strategy return, benchmark return, drawdown and trade count
+- each frozen acceptance criterion as PASS or FAIL
+- an explicit ACCEPT, REVISE or REJECT verdict
+
+The thresholds and verdict rules are defined before evaluation in `docs/validation/v0.7-criteria.md`.
+
 ## Make one paper trade
 
 ```bash

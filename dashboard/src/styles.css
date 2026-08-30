@@ -25,6 +25,28 @@ article strong { display: block; font-size: 30px; margin: 12px 0 4px; }
 .trade-head span { font-size: 13px; }
 .trade p { margin: 8px 0; color: #c6d0db; line-height: 1.45; }
 .error { background: #321b1b; border: 1px solid #633333; color: #ffb1b1; border-radius: 12px; padding: 12px 16px; margin-bottom: 16px; }
+.validation { margin-top: 16px; }
+.evaluate { background: #7857d8; border: 0; color: white; border-radius: 10px; padding: 12px 18px; font-weight: 700; cursor: pointer; }
+.evaluate:disabled { opacity: .5; cursor: not-allowed; }
+.verdict { display: grid; grid-template-columns: 180px 1fr; align-items: center; gap: 24px; margin: 22px 0; padding: 18px; border: 1px solid #7a632c; border-radius: 14px; background: #282114; }
+.verdict strong { color: #f0cc83; margin: 4px 0 0; }
+.verdict p { margin: 0; color: #d6dee7; line-height: 1.5; }
+.verdict.accept { border-color: #2c6b4b; background: #14271e; }
+.verdict.accept strong { color: #9fe3bc; }
+.verdict.reject { border-color: #783b3b; background: #2b1717; }
+.verdict.reject strong { color: #ffaaaa; }
+.periods { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; }
+.period { background: #10151b; border: 1px solid #252c35; border-radius: 14px; padding: 17px; }
+.period-head { display: flex; justify-content: space-between; gap: 12px; margin-bottom: 6px; }
+.period-head span { color: #d6a84b; font-size: 12px; font-weight: 700; }
+.period-return { margin: 20px 0 14px; }
+.period-return strong { font-size: 26px; margin: 0; }
+.period-return span { display: block; font-size: 12px; }
+.criterion { display: grid; grid-template-columns: 60px 1fr 1fr; gap: 12px; border-top: 1px solid #252c35; padding: 13px 0; align-items: center; }
+.criterion > b { color: #ffaaaa; font-size: 12px; }
+.criterion.pass > b { color: #9fe3bc; }
+.criterion > small { text-align: right; }
+.evaluated { display: block; margin-top: 14px; }
 .simulator { margin-top: 16px; }
 .sim-header { display: flex; justify-content: space-between; align-items: end; gap: 24px; }
 .sim-controls { display: flex; align-items: end; gap: 12px; }
@@ -53,6 +75,7 @@ article strong { display: block; font-size: 30px; margin: 12px 0 4px; }
 
 @media (max-width: 800px) {
   .metrics, .lower, .sim-summary { grid-template-columns: 1fr 1fr; }
+  .periods { grid-template-columns: 1fr; }
   header, .sim-header { align-items: start; gap: 20px; flex-direction: column; }
 }
 
@@ -61,4 +84,6 @@ article strong { display: block; font-size: 30px; margin: 12px 0 4px; }
   h1 { font-size: 34px; }
   .trade-head, .sim-controls { flex-direction: column; align-items: stretch; }
   .decision { grid-template-columns: 1fr; gap: 4px; }
+  .verdict, .criterion { grid-template-columns: 1fr; }
+  .criterion > small { text-align: left; }
 }
