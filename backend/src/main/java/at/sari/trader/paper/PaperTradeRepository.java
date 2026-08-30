@@ -2,4 +2,8 @@ package at.sari.trader.paper;
 
 import org.springframework.data.jpa.repository.JpaRepository;
 
-public interface PaperTradeRepository extends JpaRepository<PaperTrade, Long> {}
+import java.util.List;
+
+public interface PaperTradeRepository extends JpaRepository<PaperTrade, Long> {
+    List<PaperTrade> findTop10ByOrderByCreatedAtDesc();
+}
