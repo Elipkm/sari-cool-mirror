@@ -24,6 +24,13 @@ interface WeeklyReview {
   recentTrades: Trade[];
 }
 
+interface AutomationRun {
+  startedAt: string;
+  completedAt: string;
+  status: string;
+  summary: string;
+}
+
 @Component({
   selector: 'app-root',
   standalone: true,
@@ -31,7 +38,7 @@ interface WeeklyReview {
   template: `
     <main>
       <header>
-        <div><p class="eyebrow">WEEKLY REVIEW · PAPER TRADING</p><h1>Sari Autonomous Fund</h1></div>
+        <div><p class="eyebrow">WEEKLY REVIEW · AUTONOMOUS PAPER TRADING</p><h1>Sari Autonomous Fund</h1></div>
         <div class="status" [class.warn]="review?.systemState !== 'NORMAL'">● {{ review?.systemState || 'Loading' }}</div>
       </header>
 
@@ -46,9 +53,16 @@ interface WeeklyReview {
 
       <section class="grid lower">
         <article>
-          <p class="eyebrow">OPEN POSITIONS</p><h2>Capital at work</h2>
+          <p class="eyebrow">AUTOMATION</p><h2>Daily paper loop</h2>
+          <div class="rule"><b>Schedule</b><span>00:15 UTC daily</span></div>
+          <div class="rule"><b>Last run</b><span>{{ automation?.status || 'Not run yet' }}</span></div>
+          <div class="rule" *ngIf="automation"><b>Completed</b><span>{{ automation.completedAt | date:'medium' }}</span></div>
+          <p *ngIf="automation"><small>{{ automation.summary }}</small></p>
+
+          <p class="eyebrow section-gap">OPEN POSITIONS</p><h2>Capital at work</h2>
           <div *ngIf="positionCount === 0" class="empty">No open positions.</div>
           <div class="rule" *ngFor="let p of positions"><b>{{ p.key }}</b><span>{{ p.value | currency:'EUR' }}</span></div>
+
           <p class="eyebrow section-gap">RISK</p>
           <div class="rule"><b>System state</b><span>{{ review?.systemState }}</span></div>
           <div class="rule"><b>Drawdown</b><span>{{ review?.maxDrawdownPct ?? 0 | number:'1.2-2' }} / 15%</span></div>
@@ -68,6 +82,7 @@ interface WeeklyReview {
 })
 class AppComponent implements OnInit {
   review?: WeeklyReview;
+  automation?: AutomationRun;
   error = false;
 
   constructor(private http: HttpClient) {}
@@ -76,6 +91,9 @@ class AppComponent implements OnInit {
     this.http.get<WeeklyReview>('/api/review/weekly').subscribe({
       next: review => this.review = review,
       error: () => this.error = true
+    });
+    this.http.get<AutomationRun | null>('/api/automation/last').subscribe({
+      next: run => this.automation = run || undefined
     });
   }
 
