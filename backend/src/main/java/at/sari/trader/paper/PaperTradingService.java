@@ -48,68 +48,84 @@ public class PaperTradingService {
     public PaperTradeResult execute(TradeProposal requestedProposal) {
         BigDecimal marketPrice = marketPriceProvider.priceEur(requestedProposal.asset());
         TradeProposal proposal = new TradeProposal(
-                requestedProposal.asset(),
-                requestedProposal.side(),
-                requestedProposal.strategy(),
-                marketPrice,
-                requestedProposal.invalidationPrice(),
-                requestedProposal.signalStrength(),
-                requestedProposal.thesis()
-        );
+                requestedProposal.asset(), requestedProposal.side(), requestedProposal.strategy(), marketPrice,
+                requestedProposal.invalidationPrice(), requestedProposal.signalStrength(), requestedProposal.thesis());
+
+        if (proposal.side() == TradeProposal.Side.SELL) {
+            return exitPosition(proposal.asset(), proposal.strategy(), proposal.thesis());
+        }
 
         RiskDecision decision = riskEngine.evaluate(proposal);
         PaperTrade trade;
-
         if (!decision.allowed()) {
             trade = PaperTrade.rejected(proposal, decision.reasons());
-        } else if (proposal.side() != TradeProposal.Side.BUY) {
-            trade = PaperTrade.rejected(proposal, List.of("Milestone v0.2.0 supports opening BUY positions only"));
         } else {
-            BigDecimal fillPrice = applySlippage(proposal);
-            BigDecimal fee = decision.approvedNotionalEur()
-                    .multiply(feePct)
-                    .divide(ONE_HUNDRED, 2, RoundingMode.HALF_UP);
+            BigDecimal fillPrice = buyFillPrice(proposal.referencePrice());
+            BigDecimal fee = fee(decision.approvedNotionalEur());
             BigDecimal totalCost = decision.approvedNotionalEur().add(fee);
+            PaperAccount account = account();
 
-            PaperAccount account = accountRepository.findById(1L)
-                    .orElseGet(() -> accountRepository.save(PaperAccount.initial(INITIAL_CAPITAL)));
             if (totalCost.compareTo(account.getCashEur()) > 0) {
                 trade = PaperTrade.rejected(proposal, List.of("insufficient cash after fees"));
             } else {
-                BigDecimal quantity = decision.approvedNotionalEur()
-                        .divide(fillPrice, 12, RoundingMode.DOWN);
+                BigDecimal quantity = decision.approvedNotionalEur().divide(fillPrice, 12, RoundingMode.DOWN);
                 PaperPosition position = positionRepository.findById(proposal.asset().toUpperCase())
                         .orElseGet(() -> PaperPosition.of(proposal.asset()));
                 position.add(quantity);
                 account.debit(totalCost);
                 positionRepository.save(position);
                 accountRepository.save(account);
-
-                trade = PaperTrade.executed(
-                        proposal,
-                        decision.approvedNotionalEur(),
-                        fillPrice,
-                        fee,
-                        decision.reasons()
-                );
+                trade = PaperTrade.executed(proposal, decision.approvedNotionalEur(), fillPrice, fee, decision.reasons());
             }
         }
+        return PaperTradeResult.from(tradeRepository.save(trade));
+    }
 
+    @Transactional
+    public PaperTradeResult exitPosition(String asset, String strategy, String reason) {
+        String symbol = asset.toUpperCase();
+        BigDecimal marketPrice = marketPriceProvider.priceEur(symbol);
+        TradeProposal proposal = new TradeProposal(symbol, TradeProposal.Side.SELL, strategy, marketPrice,
+                marketPrice.multiply(new BigDecimal("1.01")), 1.0, reason);
+        PaperPosition position = positionRepository.findById(symbol).orElse(null);
+        if (position == null || !position.isOpen()) {
+            return PaperTradeResult.from(tradeRepository.save(PaperTrade.rejected(proposal, List.of("no open position"))));
+        }
+
+        BigDecimal fillPrice = sellFillPrice(marketPrice);
+        BigDecimal notional = position.getQuantity().multiply(fillPrice).setScale(2, RoundingMode.DOWN);
+        BigDecimal fee = fee(notional);
+        PaperAccount account = account();
+        account.credit(notional.subtract(fee));
+        position.clear();
+        accountRepository.save(account);
+        positionRepository.save(position);
+        PaperTrade trade = PaperTrade.executed(proposal, notional, fillPrice, fee, List.of("position fully closed"));
         return PaperTradeResult.from(tradeRepository.save(trade));
     }
 
     @Transactional(readOnly = true)
     public List<PaperTradeResult> ledger() {
-        return tradeRepository.findAll(Sort.by(Sort.Direction.DESC, "createdAt"))
-                .stream()
-                .map(PaperTradeResult::from)
-                .toList();
+        return tradeRepository.findAll(Sort.by(Sort.Direction.DESC, "createdAt")).stream()
+                .map(PaperTradeResult::from).toList();
     }
 
-    private BigDecimal applySlippage(TradeProposal proposal) {
+    private PaperAccount account() {
+        return accountRepository.findById(1L)
+                .orElseGet(() -> accountRepository.save(PaperAccount.initial(INITIAL_CAPITAL)));
+    }
+
+    private BigDecimal fee(BigDecimal notional) {
+        return notional.multiply(feePct).divide(ONE_HUNDRED, 2, RoundingMode.HALF_UP);
+    }
+
+    private BigDecimal buyFillPrice(BigDecimal price) {
         BigDecimal factor = slippagePct.divide(ONE_HUNDRED, 10, RoundingMode.HALF_UP);
-        return proposal.referencePrice()
-                .multiply(BigDecimal.ONE.add(factor))
-                .setScale(8, RoundingMode.HALF_UP);
+        return price.multiply(BigDecimal.ONE.add(factor)).setScale(8, RoundingMode.HALF_UP);
+    }
+
+    private BigDecimal sellFillPrice(BigDecimal price) {
+        BigDecimal factor = slippagePct.divide(ONE_HUNDRED, 10, RoundingMode.HALF_UP);
+        return price.multiply(BigDecimal.ONE.subtract(factor)).setScale(8, RoundingMode.HALF_UP);
     }
 }
