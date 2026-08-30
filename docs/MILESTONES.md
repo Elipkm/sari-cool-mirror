@@ -63,17 +63,64 @@ Done when one page shows:
 - anything needing attention
 - end-to-end test proves backend data reaches the dashboard
 
-## v0.5.0 — Paper Validation
+## v0.5.0 — Autonomous Paper Loop
 
-**Goal:** decide objectively whether the strategy deserves real money.
+**Goal:** run the paper strategy unattended and collect a real track record.
 
 Done when:
-- continuous paper run data is available
-- benchmark comparison after fees
-- drawdown and risk metrics
-- simple weekly report
-- explicit go/no-go criteria for live trading
-- no live adapter enabled by default
+- BTC, ETH and SOL are evaluated daily
+- signals pass through the deterministic risk and paper execution path
+- automation runs and failures are persisted
+- the dashboard shows the latest automation result
+- manual and scheduled runs use the same code path
+
+## v0.6.0 — Historical Validation
+
+**Goal:** evaluate the complete strategy/risk behavior without waiting months.
+
+Done when:
+- select a historical start date
+- advance exactly one completed day for inspection
+- run the entire selected period to the latest completed day
+- historical BUY signals use the production deterministic risk engine
+- fees and slippage are included
+- strategy equity is compared with equal-weight BTC/ETH/SOL buy-and-hold
+- equity curve, trade ledger, drawdown, win rate and costs are visible
+- simulation remains isolated from the real paper account
+- end-to-end test proves the full historical flow
+
+## v0.7.0 — Strategy Decision
+
+**Goal:** make an evidence-based go/no-go decision on the current strategy.
+
+Done when:
+- several start dates and market regimes are evaluated
+- parameters are frozen before evaluation
+- results are separated into development and out-of-sample periods
+- explicit return, drawdown and trade-count criteria are documented
+- strategy is accepted, revised once from specific evidence, or rejected
+
+## v0.8.0 — Reliable Autonomous Operation
+
+**Goal:** make unattended paper operation resilient to ordinary failures.
+
+Done when:
+- missed daily runs catch up safely after restart
+- containers restart automatically
+- stale market data and API failures are visible
+- health status distinguishes data, backend and scheduler problems
+- restart and recovery are covered end to end
+
+## v0.9.0 — Live Safety Rehearsal
+
+**Goal:** prove live-shaped safety controls without placing real orders.
+
+Done when:
+- fake exchange adapter exercises order and reconciliation flows
+- kill switch and hard capital ceiling are proven
+- paper/live mode cannot be confused
+- credential permissions are documented and validated
+- all live boundaries remain mocked or sandboxed
 
 ## v1.0.0 — Small Live Account
 

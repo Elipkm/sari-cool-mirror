@@ -26,7 +26,11 @@ public class RiskEngine {
     }
 
     public RiskDecision evaluate(TradeProposal proposal) {
-        PortfolioState state = portfolioStateProvider.currentState();
+        return evaluate(proposal, portfolioStateProvider.currentState());
+    }
+
+    /** Evaluate a proposal against an explicit trusted state, used by isolated historical validation. */
+    public RiskDecision evaluate(TradeProposal proposal, PortfolioState state) {
         List<String> violations = new ArrayList<>();
 
         if (!policy.assetWhitelist().contains(proposal.asset().toUpperCase())) {
